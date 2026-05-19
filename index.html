@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard & Pengolah Laporan AC - AI System</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --success: #10b981;
+            --background: #f1f5f9;
+            --text: #1e293b;
+        }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: var(--background); color: var(--text); }
+        .navbar { background-color: var(--primary); color: white; padding: 15px 20px; font-size: 20px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .container { max-width: 1200px; margin: 25px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 25px; }
+        @media (min-width: 992px) { .container { grid-template-columns: 400px 1fr; } }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        label { font-weight: 600; display: block; margin: 12px 0 6px; font-size: 14px; }
+        textarea, input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        textarea { height: 80px; resize: vertical; }
+        .btn { display: inline-block; width: 100%; padding: 12px; background-color: var(--secondary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 10px; font-size: 14px; transition: background 0.2s; }
+        .btn:hover { background-color: #2563eb; }
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: #059669; }
+        .prompt-box { background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 6px; font-size: 13px; margin-top: 8px; position: relative; }
+        .prompt-text { font-family: monospace; word-break: break-all; color: #1e40af; }
+        .btn-copy { position: absolute; top: 5px; right: 5px; background: #3b82f6; color: white; border: none; padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; }
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        th { background-color: #f8fafc; color: #64748b; font-weight: 600; }
+        tr:hover { background-color: #f8fafc; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .badge-wa { background-color: #dcfce7; color: #166534; }
+        .status-done { color: #10b981; font-weight: bold; }
+        .status-pending { color: #f59e0b; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="navbar">🛠️ AC Maintenance - AI Intelligence System</div>
+
+<div class="container">
+    <!-- SEBELAH KIRI: PANEL INPUT & AUTO PROMPT -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- BAGIAN 1: AUTO PROMPT GENERATOR -->
+        <div class="card">
+            <h3>1. Auto Chat Prompt Generator</h3>
+            <p style="font-size: 12px; margin: 0 0 10px 0; color: #64748b;">Tempel chat mentah dari WA ke sini untuk dibuatkan teks perintah otomatis untuk ChatGPT/Gemini.</p>
+            <textarea id="wa-raw" placeholder="Contoh: Laporan ac ruang rapat bapak budi tgl 19 mei shift pagi rusak gak dingin, sudah dicuci beres status oke.."></textarea>
+            <button class="btn" onclick="generatePrompt()">Buat Prompt AI 🤖</button>
+            
+            <div id="prompt-container" class="prompt-box" style="display:none;">
+                <button class="btn-copy" onclick="copyPrompt()">Copy</button>
+                <div class="prompt-text" id="prompt-output"></div>
+            </div>
+        </div>
+
+        <!-- BAGIAN 2: INPUT HASIL AI & FORM -->
+        <div class="card">
+            <h3>2. Eksekusi Hasil Olahan AI</h3>
+            <label>Tempel Output JSON dari AI:</label>
+            <textarea id="ai-json" placeholder='Pasang kode {"Tanggal": "...", ...} dari AI di sini'></textarea>
+            <button class="btn" onclick="ekstrakJsonAI()">Urai Data JSON ⚙️</button>
+            
+            <form id="form-laporan" onsubmit="kirimKeSheet(event)" style="margin-top: 15px;">
+                <label>Tanggal</label><input type="text" id="Tanggal" required>
+                <label>Shift</label><input type="text" id="Shift" required>
+                <label>Nama Teknisi</label><input type="text" id="Nama_Teknisi" required>
+                <label>Ruangan yang Diservice</label><input type="text" id="Ruangan" required>
+                <label>Jenis Pekerjaan</label><input type="text" id="Jenis_Pekerjaan" required>
+                <label>Detail Pekerjaan</label><input type="text" id="Detail_Pekerjaan" required>
+                <label>Material Digunakan</label><input type="text" id="Material" required>
+                <label>Status</label><input type="text" id="Status" required>
+                <label>Foto/Dokumentasi</label><input type="text" id="Foto" required>
+                <label>Keterangan</label><input type="text" id="Keterangan" required>
+                
+                <button type="submit" class="btn btn-success">Simpan ke Google Sheet 🚀</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SEBELAH KANAN: DASHBOARD UTAMA -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+            <h3 style="margin: 0; border: none; padding: 0;">📊 Dashboard Laporan Harian Utama</h3>
+            <button class="btn" onclick="muatDashboardData()" style="width: auto; margin: 0; padding: 6px 12px; background-color: #64748b;">Segarkan Data 🔄</button>
+        </div>
+        
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Tanggal/Shift</th>
+                        <th>Teknisi</th>
+                        <th>Ruangan</th>
+                        <th>Pekerjaan (Detail)</th>
+                        <th>Material</th>
+                        <th>Status</th>
+                        <th>Dokumentasi</th>
+                        <th>Input Via</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboard-rows">
+                    <tr>
+                        <td colspan="9" style="text-align: center; color: #94a3b8;">Memuat data dashboard...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // URL API Sheet Best milikmu sudah terpasang di sini
+    const API_URL = "https://api.sheetbest.com/sheets/f42405fc-0639-47b1-bef3-817aed0e6e45";
+
+    // 1. FUNGSI AUTO CHAT PROMPT GENERATOR
+    function generatePrompt() {
+        const chatWA = document.getElementById('wa-raw').value.trim();
+        if(!chatWA) return alert("Tempel teks chat WA terlebih dahulu!");
+        
+        const teksPrompt = `Ubah teks laporan WhatsApp berikut menjadi format JSON bersih tanpa bungkus Markdown (jangan pakai kode \`\`\`json). Cukup berikan objek JSON saja dengan nama key persis: "Tanggal", "Shift", "Nama Teknisi", "Ruangan yang Diservice", "Jenis Pekerjaan", "Detail Pekerjaan", "Material Digunakan", "Status", "Foto/Dokumentasi", "Keterangan". Jika informasi di chat tidak ada, isi valuenya dengan tanda strip (-). Ini teks WA-nya: ${chatWA}`;
+        
+        document.getElementById('prompt-output').innerText = teksPrompt;
+        document.getElementById('prompt-container').style.display = 'block';
+    }
+
+    function copyPrompt() {
+        const text = document.getElementById('prompt-output').innerText;
+        navigator.clipboard.writeText(text);
+        alert("Prompt berhasil disalin! Silakan paste ke ChatGPT / Gemini.");
+    }
+
+    // 2. FUNGSI URAL / PARSE JSON DARI AI KE INPUT FORM WEB
+    function ekstrakJsonAI() {
+        const rawJson = document.getElementById('ai-json').value.trim();
+        try {
+            const data = JSON.parse(rawJson);
+            document.getElementById('Tanggal').value = data["Tanggal"] || '-';
+            document.getElementById('Shift').value = data["Shift"] || '-';
+            document.getElementById('Nama_Teknisi').value = data["Nama Teknisi"] || '-';
+            document.getElementById('Ruangan').value = data["Ruangan yang Diservice"] || '-';
+            document.getElementById('Jenis_Pekerjaan').value = data["Jenis Pekerjaan"] || '-';
+            document.getElementById('Detail_Pekerjaan').value = data["Detail Pekerjaan"] || '-';
+            document.getElementById('Material').value = data["Material Digunakan"] || '-';
+            document.getElementById('Status').value = data["Status"] || '-';
+            document.getElementById('Foto').value = data["Foto/Dokumentasi"] || '-';
+            document.getElementById('Keterangan').value = data["Keterangan"] || '-';
+            alert("Data AI berhasil ditransfer ke form pratinjau!");
+        } catch (e) {
+            alert("Format JSON tidak valid! Pastikan kamu menyalin kode JSON utuh tanpa teks tambahan dari AI.");
+        }
+    }
+
+    // 3. FUNGSI POST DATA KE GOOGLE SHEETS
+    function kirimKeSheet(event) {
+        event.preventDefault();
+        const waktuSkg = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+        
+        const payload = {
+            "Tanggal": document.getElementById('Tanggal').value,
+            "Shift": document.getElementById('Shift').value,
+            "Nama Teknisi": document.getElementById('Nama_Teknisi').value,
+            "Ruangan yang Diservice": document.getElementById('Ruangan').value,
+            "Jenis Pekerjaan": document.getElementById('Jenis_Pekerjaan').value,
+            "Detail Pekerjaan": document.getElementById('Detail_Pekerjaan').value,
+            "Material Digunakan": document.getElementById('Material').value,
+            "Status": document.getElementById('Status').value,
+            "Foto/Dokumentasi": document.getElementById('Foto').value,
+            "Keterangan": document.getElementById('Keterangan').value,
+            "Sumber Input": "WhatsApp via AI",
+            "Waktu Input pada laporan harian": waktuSkg
+        };
+
+        fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(() => {
+            alert("Laporan sukses diinput ke Google Sheet!");
+            document.getElementById('form-laporan').reset();
+            document.getElementById('ai-json').value = "";
+            document.getElementById('wa-raw').value = "";
+            muatDashboardData(); // Refresh isi tabel dashboard
+        })
+        .catch(err => alert("Gagal mengirim data. Terjadi kesalahan jaringan."));
+    }
+
+    // 4. FUNGSI READ DATA UNTUK DASHBOARD UTAMA
+    function muatDashboardData() {
+        const tbody = document.getElementById('dashboard-rows');
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Menyinkronkan data...</td></tr>`;
+
+        fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+            tbody.innerHTML = "";
+            if(!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">Belum ada data laporan di Google Sheet.</td></tr>`;
+                return;
+            }
+            // Render baris demi baris tabel dashboard
+            data.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                
+                // Cek status amankan null data
+                const txtStatus = item["Status"] ? item["Status"].toLowerCase() : '';
+                const badgeStatus = txtStatus.includes('selesai') || txtStatus.includes('oke') || txtStatus.includes('done') ? 'status-done' : 'status-pending';
+                
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${item["Tanggal"] || '-'}</strong><br><small style="color:#64748b">${item["Shift"] || '-'}</small></td>
+                    <td>${item["Nama Teknisi"] || '-'}</td>
+                    <td>${item["Ruangan yang Diservice"] || '-'}</td>
+                    <td><strong>${item["Jenis Pekerjaan"] || '-'}</strong><br><small style="color:#64748b">${item["Detail Pekerjaan"] || '-'}</small></td>
+                    <td>${item["Material Digunakan"] || '-'}</td>
+                    <td class="${badgeStatus}">${item["Status"] || '-'}</td>
+                    <td>${item["Foto/Dokumentasi"] && item["Foto/Dokumentasi"].startsWith('http') ? `<a href="${item["Foto/Dokumentasi"]}" target="_blank">Lihat Foto</a>` : (item["Foto/Dokumentasi"] || '-')}</td>
+                    <td><span class="badge badge-wa">${item["Sumber Input"] || 'Manual'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Gagal mengambil data untuk dashboard. Hubungkan dengan Sheet Best.</td></tr>`;
+        });
+    }
+
+    // Jalankan dashboard otomatis saat pertama dibuka
+    window.addEventListener('DOMContentLoaded', muatDashboardData);
+</script>
+</body>
+</html>
