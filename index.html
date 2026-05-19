@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Otomatis Laporan AC - Groq AI Engine</title>
+    <title>Sistem Otomatis Laporan AC - Groq Engine v2.1</title>
     <style>
         :root {
             --primary: #1e3a8a;
@@ -25,10 +25,10 @@
         .btn:hover { background-color: #059669; }
         .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
         
-        .log-box { background-color: #1e293b; color: #38bdf8; padding: 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin-top: 15px; max-height: 150px; overflow-y: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
-        .log-entry { margin-bottom: 6px; border-bottom: 1px solid #334155; padding-bottom: 4px; }
-        .log-success { color: #34d399; }
-        .log-error { color: #f87171; }
+        .log-box { background-color: #1e293b; color: #38bdf8; padding: 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin-top: 15px; max-height: 180px; overflow-y: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+        .log-entry { margin-bottom: 6px; border-bottom: 1px solid #334155; padding-bottom: 4px; line-height: 1.4; }
+        .log-success { color: #34d399; font-weight: bold; }
+        .log-error { color: #f87171; font-weight: bold; }
 
         .table-responsive { overflow-x: auto; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
@@ -42,39 +42,173 @@
         
         .loader { display: none; text-align: center; margin-top: 10px; font-weight: bold; color: var(--secondary); }
     </style>
+
+    <script>
+        // MENDAPATKAN DEFINISI FUNGSI LEBIH AWAL AGAR TIDAK ERROR NOT DEFINED
+        const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/f42405fc-0639-47b1-bef3-817aed0e6e45";
+
+        function writeLog(text, type = '') {
+            const logBox = document.getElementById('system-log');
+            if(!logBox) return;
+            const timestamp = new Date().toLocaleTimeString('id-ID');
+            let classType = '';
+            if(type === 'success') classType = 'log-success';
+            if(type === 'error') classType = 'log-error';
+            
+            logBox.innerHTML += `<div class="log-entry ${classType}">[${timestamp}] ${text}</div>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        async function prosesLaporanOtomatis() {
+            const apiKeyInput = document.getElementById('groq-key').value.trim();
+            const chatWA = document.getElementById('wa-input').value.trim();
+            
+            if(!apiKeyInput) { alert("Isi API Key Groq terlebih dahulu!"); return; }
+            if(!chatWA) { alert("Tempel data chat WA terlebih dahulu!"); return; }
+
+            const btn = document.getElementById('btn-proses');
+            const loader = document.getElementById('loading-status');
+            btn.disabled = true;
+            loader.style.display = 'block';
+
+            writeLog("Menghubungi server Groq AI...", "");
+
+            try {
+                const responseGroq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKeyInput}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama3-8b-8192",
+                        messages: [
+                            { 
+                                role: "system", 
+                                content: `Ubah teks laporan menjadi JSON murni tanpa markdown. Harus berupa satu objek dengan key teks persis ini: "Tanggal", "Shift", "Nama Teknisi", "Ruangan yang Diservice", "Jenis Pekerjaan", "Detail Pekerjaan", "Material Digunakan", "Status", "Foto/Dokumentasi", "Keterangan". Jika data kosong isi dengan "-".` 
+                            },
+                            { role: "user", content: chatWA }
+                        ],
+                        temperature: 0.1
+                    })
+                });
+
+                if (!responseGroq.ok) {
+                    const errData = await responseGroq.json();
+                    throw new Error(`Groq menolak akses. Detail: ${errData.error?.message || responseGroq.statusText}`);
+                }
+
+                const resData = await responseGroq.json();
+                let rawJsonText = resData.choices[0].message.content.trim();
+                
+                if(rawJsonText.includes("```")) {
+                    rawJsonText = rawJsonText.replace(/```json|```/g, "").trim();
+                }
+
+                writeLog("AI berhasil menyusun struktur data laporan.", "success");
+                const parsedData = JSON.parse(rawJsonText);
+                
+                const waktuSkg = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+                parsedData["Sumber Input"] = "WhatsApp via Groq AI";
+                parsedData["Waktu Input pada laporan harian"] = waktuSkg;
+
+                writeLog("Mengirim data hasil AI ke Google Sheet...", "");
+
+                const responseSheet = await fetch(SHEET_BEST_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(parsedData)
+                });
+
+                if(responseSheet.ok) {
+                    writeLog("SUKSES: Laporan berhasil disimpan ke Google Sheet!", "success");
+                    document.getElementById('wa-input').value = "";
+                    muatDashboardData();
+                } else {
+                    throw new Error(`Gagal kirim ke Google Sheet. Status: ${responseSheet.status}`);
+                }
+
+            } catch (error) {
+                console.error(error);
+                writeLog("ERROR: " + error.message, "error");
+                alert("Gagal memproses data. Cek kotak monitor log hitam.");
+            } finally {
+                btn.disabled = false;
+                loader.style.display = 'none';
+            }
+        }
+
+        function muatDashboardData() {
+            const tbody = document.getElementById('dashboard-rows');
+            if(!tbody) return;
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Menyinkronkan data...</td></tr>`;
+
+            fetch(SHEET_BEST_URL)
+            .then(res => res.json())
+            .then(data => {
+                tbody.innerHTML = "";
+                if(!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">Belum ada data di Google Sheet.</td></tr>`;
+                    return;
+                }
+                data.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    const txtStatus = item["Status"] ? item["Status"].toLowerCase() : '';
+                    const badgeStatus = txtStatus.includes('selesai') || txtStatus.includes('oke') || txtStatus.includes('done') ? 'status-done' : 'status-pending';
+                    
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td><strong>${item["Tanggal"] || '-'}</strong><br><small style="color:#64748b">${item["Shift"] || '-'}</small></td>
+                        <td>${item["Nama Teknisi"] || '-'}</td>
+                        <td>${item["Ruangan yang Diservice"] || '-'}</td>
+                        <td><strong>${item["Jenis Pekerjaan"] || '-'}</strong><br><small style="color:#64748b">${item["Detail Pekerjaan"] || '-'}</small></td>
+                        <td>${item["Material Digunakan"] || '-'}</td>
+                        <td class="${badgeStatus}">${item["Status"] || '-'}</td>
+                        <td>${item["Foto/Dokumentasi"] && item["Foto/Dokumentasi"].startsWith('http') ? `<a href="${item["Foto/Dokumentasi"]}" target="_blank">Lihat Foto</a>` : (item["Foto/Dokumentasi"] || '-')}</td>
+                        <td><span class="badge badge-wa">${item["Sumber Input"] || 'Manual'}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Gagal memuat dashboard. Hubungkan internet.</td></tr>`;
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', muatDashboardData);
+    </script>
 </head>
 <body>
 
-<div class="navbar">⚡ AC Maintenance - Groq AI Lightning System</div>
+<div class="navbar">⚡ AC Maintenance - Groq AI Lightning Engine v2.1</div>
 
 <div class="container">
-    <!-- SEBELAH KIRI: PANEL INPUT -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
-        <!-- KOTAK PENGAMAN API KEY GROQ -->
+        <!-- INPUT API KEY -->
         <div class="card" style="border: 2px solid #10b981;">
             <h3 style="color: #15803d;">🔑 Kunci Akses Groq AI</h3>
             <label>Masukkan API Key Groq Kamu:</label>
             <input type="password" id="groq-key" placeholder="Tempel gsk_... milikmu di sini">
-            <p style="font-size: 11px; color: #16a34a; margin: 5px 0 0 0;">*Kunci ini aman, hanya berjalan di browsermu dan tidak akan bocor ke GitHub.</p>
         </div>
 
+        <!-- INPUT CHAT WA -->
         <div class="card">
             <h3>📥 Paste Chat WhatsApp</h3>
             <textarea id="wa-input" placeholder="Tempel laporan mentah dari grup WA di sini..."></textarea>
             <button id="btn-proses" class="btn" onclick="prosesLaporanOtomatis()">Proses & Inject ke Sheet 🚀</button>
-            <div id="loading-status" class="loader">⚡ Groq LPU sedang memproses data kilat...</div>
+            <div id="loading-status" class="loader">⚡ Sedang memproses data...</div>
         </div>
 
-        <!-- LOG MONITOR -->
+        <!-- LIVE LOG SYSTEM -->
         <div class="card">
             <h3>🖥️ Live Process Log Chat</h3>
             <div class="log-box" id="system-log">
-                <div class="log-entry">[SYSTEM] Engine siap. Masukkan Groq API Key untuk memulai...</div>
+                <div class="log-entry">[SYSTEM] Engine v2.1 siap digunakan.</div>
             </div>
         </div>
     </div>
 
-    <!-- SEBELAH KANAN: DASHBOARD -->
+    <!-- DASHBOARD -->
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
             <h3 style="margin: 0; border: none; padding: 0;">📊 Dashboard Laporan Harian Utama</h3>
@@ -106,156 +240,5 @@
     </div>
 </div>
 
-<script>
-    // URL API Sheet Best milikmu tetap aman di sini
-    const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/f42405fc-0639-47b1-bef3-817aed0e6e45";
-
-    function writeLog(text, type = '') {
-        const logBox = document.getElementById('system-log');
-        const timestamp = new Date().toLocaleTimeString('id-ID');
-        let classType = '';
-        if(type === 'success') classType = 'log-success';
-        if(type === 'error') classType = 'log-error';
-        
-        logBox.innerHTML += `<div class="log-entry ${classType}">[${timestamp}] ${text}</div>`;
-        logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    // MAIN ENGINE MENGGUNAKAN GROQ CLOUD API
-    async function prosesLaporanOtomatis() {
-        const apiKeyInput = document.getElementById('groq-key').value.trim();
-        const chatWA = document.getElementById('wa-input').value.trim();
-        
-        if(!apiKeyInput) return alert("Wajib memasukkan API Key Groq di kotak hijau atas!");
-        if(!chatWA) return alert("Silakan tempel teks chat WA terlebih dahulu!");
-
-        const btn = document.getElementById('btn-proses');
-        const loader = document.getElementById('loading-status');
-        btn.disabled = true;
-        loader.style.display = 'block';
-
-        writeLog("Menghubungi Groq LPU Engine...", "");
-
-        // Menggunakan model llama3-8b-8192 yang gratis, super cepat, dan andal
-        const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
-        
-        const instruksiSystem = `Ubah teks laporan teknik AC menjadi objek JSON murni tanpa pembungkus markdown seperti \`\`\`json. Kamu HARUS mengeluarkan data dengan key bertipe teks persis seperti ini:
-        {
-          "Tanggal": "isi tanggal",
-          "Shift": "isi shift",
-          "Nama Teknisi": "isi nama",
-          "Ruangan yang Diservice": "isi ruangan",
-          "Jenis Pekerjaan": "isi jenis pekerjaan",
-          "Detail Pekerjaan": "isi detail kerja",
-          "Material Digunakan": "isi material",
-          "Status": "isi status kerjaan",
-          "Foto/Dokumentasi": "isi url foto atau deskripsi foto",
-          "Keterangan": "isi keterangan tambahan"
-        }
-        Peraturan: Jika informasi di teks tidak tertera, isi valuenya dengan "-". Jangan ubah atau kurangi struktur key di atas.`;
-
-        try {
-            const responseGroq = await fetch(groqUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKeyInput}`
-                },
-                body: JSON.stringify({
-                    model: "llama3-8b-8192",
-                    messages: [
-                        { role: "system", content: instruksiSystem },
-                        { role: "user", content: chatWA }
-                    ],
-                    temperature: 0.1,
-                    response_format: { type: "json_object" } // Memaksa Groq mengeluarkan JSON bersih
-                })
-            });
-
-            if(!responseGroq.ok) throw new Error("API Key Groq salah, tidak valid, atau limit habis.");
-
-            const resData = await responseGroq.json();
-            let rawJsonText = resData.choices[0].message.content.trim();
-            
-            // Pengaman tambahan jika tanda markdown tetap lolos
-            if(rawJsonText.includes("```")) {
-                rawJsonText = rawJsonText.replace(/
-```json|```/g, "").trim();
-            }
-
-            writeLog("Groq Sukses mengekstrak data ke format JSON.", "success");
-            const parsedData = JSON.parse(rawJsonText);
-            
-            // Tambah metadata waktu real-time
-            const waktuSkg = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-            parsedData["Sumber Input"] = "WhatsApp via Groq AI";
-            parsedData["Waktu Input pada laporan harian"] = waktuSkg;
-
-            writeLog("Mengirim data langsung ke Google Sheet...", "");
-
-            const responseSheet = await fetch(SHEET_BEST_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(parsedData)
-            });
-
-            if(responseSheet.ok) {
-                writeLog("DATA BERHASIL DI-INJECT KE GOOGLE SHEET!", "success");
-                alert("Sukses! Chat WA diproses Groq AI & langsung masuk ke Google Sheet.");
-                document.getElementById('wa-input').value = "";
-                muatDashboardData(); // Refresh dashboard otomatis
-            } else {
-                throw new Error("Gagal terhubung dengan Sheet Best.");
-            }
-
-        } catch (error) {
-            console.error(error);
-            writeLog("PROSES GAGAL: " + error.message, "error");
-            alert("Terjadi kesalahan sistem. Periksa kembali API Key Groq kamu.");
-        } finally {
-            btn.disabled = false;
-            loader.style.display = 'none';
-        }
-    }
-
-    function muatDashboardData() {
-        const tbody = document.getElementById('dashboard-rows');
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Menyinkronkan data...</td></tr>`;
-
-        fetch(SHEET_BEST_URL)
-        .then(res => res.json())
-        .then(data => {
-            tbody.innerHTML = "";
-            if(!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">Belum ada data di Google Sheet.</td></tr>`;
-                return;
-            }
-            
-            data.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                const txtStatus = item["Status"] ? item["Status"].toLowerCase() : '';
-                const badgeStatus = txtStatus.includes('selesai') || txtStatus.includes('oke') || txtStatus.includes('done') ? 'status-done' : 'status-pending';
-                
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><strong>${item["Tanggal"] || '-'}</strong><br><small style="color:#64748b">${item["Shift"] || '-'}</small></td>
-                    <td>${item["Nama Teknisi"] || '-'}</td>
-                    <td>${item["Ruangan yang Diservice"] || '-'}</td>
-                    <td><strong>${item["Jenis Pekerjaan"] || '-'}</strong><br><small style="color:#64748b">${item["Detail Pekerjaan"] || '-'}</small></td>
-                    <td>${item["Material Digunakan"] || '-'}</td>
-                    <td class="${badgeStatus}">${item["Status"] || '-'}</td>
-                    <td>${item["Foto/Dokumentasi"] && item["Foto/Dokumentasi"].startsWith('http') ? `<a href="${item["Foto/Dokumentasi"]}" target="_blank">Lihat Foto</a>` : (item["Foto/Dokumentasi"] || '-')}</td>
-                    <td><span class="badge badge-wa">${item["Sumber Input"] || 'Manual'}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        })
-        .catch(err => {
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Gagal mengambil data untuk dashboard.</td></tr>`;
-        });
-    }
-
-    window.addEventListener('DOMContentLoaded', muatDashboardData);
-</script>
 </body>
 </html>
