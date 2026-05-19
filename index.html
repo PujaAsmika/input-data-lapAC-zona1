@@ -1,244 +1,240 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Otomatis Laporan AC - Groq Engine v2.1</title>
-    <style>
-        :root {
-            --primary: #1e3a8a;
-            --secondary: #3b82f6;
-            --success: #10b981;
-            --background: #f1f5f9;
-            --text: #1e293b;
-        }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: var(--background); color: var(--text); }
-        .navbar { background-color: var(--primary); color: white; padding: 15px 20px; font-size: 20px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .container { max-width: 1200px; margin: 25px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 25px; }
-        @media (min-width: 992px) { .container { grid-template-columns: 450px 1fr; } }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); box-sizing: border-box; }
-        h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-        label { font-weight: 600; display: block; margin: 12px 0 6px; font-size: 14px; }
-        textarea { width: 100%; height: 140px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; resize: none; }
-        input[type="password"] { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: #f0fdf4; }
-        .btn { display: inline-block; width: 100%; padding: 14px; background-color: var(--success); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 15px; font-size: 15px; transition: background 0.2s; }
-        .btn:hover { background-color: #059669; }
-        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        
-        .log-box { background-color: #1e293b; color: #38bdf8; padding: 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin-top: 15px; max-height: 180px; overflow-y: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
-        .log-entry { margin-bottom: 6px; border-bottom: 1px solid #334155; padding-bottom: 4px; line-height: 1.4; }
-        .log-success { color: #34d399; font-weight: bold; }
-        .log-error { color: #f87171; font-weight: bold; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Otomatis Laporan AC - Groq Engine v2.1</title>
+<style>
+:root {
+  --primary: #1e3a8a;
+  --secondary: #3b82f6;
+  --success: #10b981;
+  --background: #f1f5f9;
+  --text: #1e293b;
+}
+body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: var(--background); color: var(--text); }
+.navbar { background-color: var(--primary); color: white; padding: 15px 20px; font-size: 20px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.container { max-width: 1200px; margin: 25px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 25px; }
+@media (min-width: 992px) { .container { grid-template-columns: 450px 1fr; } }
+.card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); box-sizing: border-box; }
+h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+label { font-weight: 600; display: block; margin: 12px 0 6px; font-size: 14px; }
+textarea { width: 100%; height: 140px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; resize: none; }
+input[type="password"] { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: #f0fdf4; }
+.btn { display: inline-block; width: 100%; padding: 14px; background-color: var(--success); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 15px; font-size: 15px; transition: background 0.2s; }
+.btn:hover { background-color: #059669; }
+.btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+.log-box { background-color: #1e293b; color: #38bdf8; padding: 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; margin-top: 15px; max-height: 180px; overflow-y: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); }
+.log-entry { margin-bottom: 6px; border-bottom: 1px solid #334155; padding-bottom: 4px; line-height: 1.4; }
+.log-success { color: #34d399; font-weight: bold; }
+.log-error { color: #f87171; font-weight: bold; }
+.table-responsive { overflow-x: auto; margin-top: 15px; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+th { background-color: #f8fafc; color: #64748b; font-weight: 600; }
+tr:hover { background-color: #f8fafc; }
+.badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+.badge-wa { background-color: #dcfce7; color: #166534; }
+.status-done { color: #10b981; font-weight: bold; }
+.status-pending { color: #f59e0b; font-weight: bold; }
+.loader { display: none; text-align: center; margin-top: 10px; font-weight: bold; color: var(--secondary); }
+</style>
 
-        .table-responsive { overflow-x: auto; margin-top: 15px; }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-        th, td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        th { background-color: #f8fafc; color: #64748b; font-weight: 600; }
-        tr:hover { background-color: #f8fafc; }
-        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
-        .badge-wa { background-color: #dcfce7; color: #166534; }
-        .status-done { color: #10b981; font-weight: bold; }
-        .status-pending { color: #f59e0b; font-weight: bold; }
-        
-        .loader { display: none; text-align: center; margin-top: 10px; font-weight: bold; color: var(--secondary); }
-    </style>
+<script>
+const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/f42405fc-0639-47b1-bef3-817aed0e6e45";
 
-    <script>
-        // MENDAPATKAN DEFINISI FUNGSI LEBIH AWAL AGAR TIDAK ERROR NOT DEFINED
-        const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/f42405fc-0639-47b1-bef3-817aed0e6e45";
+// ✅ FIX: Assign ke window agar bisa dipanggil dari inline onclick di HTML
+window.writeLog = function(text, type = '') {
+  const logBox = document.getElementById('system-log');
+  if (!logBox) return;
+  const timestamp = new Date().toLocaleTimeString('id-ID');
+  let classType = '';
+  if (type === 'success') classType = 'log-success';
+  if (type === 'error') classType = 'log-error';
+  logBox.innerHTML += `<div class="log-entry ${classType}">[${timestamp}] ${text}</div>`;
+  logBox.scrollTop = logBox.scrollHeight;
+}
 
-        function writeLog(text, type = '') {
-            const logBox = document.getElementById('system-log');
-            if(!logBox) return;
-            const timestamp = new Date().toLocaleTimeString('id-ID');
-            let classType = '';
-            if(type === 'success') classType = 'log-success';
-            if(type === 'error') classType = 'log-error';
-            
-            logBox.innerHTML += `<div class="log-entry ${classType}">[${timestamp}] ${text}</div>`;
-            logBox.scrollTop = logBox.scrollHeight;
-        }
+// ✅ FIX: Assign ke window.prosesLaporanOtomatis
+window.prosesLaporanOtomatis = async function() {
+  const apiKeyInput = document.getElementById('groq-key').value.trim();
+  const chatWA = document.getElementById('wa-input').value.trim();
 
-        async function prosesLaporanOtomatis() {
-            const apiKeyInput = document.getElementById('groq-key').value.trim();
-            const chatWA = document.getElementById('wa-input').value.trim();
-            
-            if(!apiKeyInput) { alert("Isi API Key Groq terlebih dahulu!"); return; }
-            if(!chatWA) { alert("Tempel data chat WA terlebih dahulu!"); return; }
+  if (!apiKeyInput) { alert("Isi API Key Groq terlebih dahulu!"); return; }
+  if (!chatWA) { alert("Tempel data chat WA terlebih dahulu!"); return; }
 
-            const btn = document.getElementById('btn-proses');
-            const loader = document.getElementById('loading-status');
-            btn.disabled = true;
-            loader.style.display = 'block';
+  const btn = document.getElementById('btn-proses');
+  const loader = document.getElementById('loading-status');
+  btn.disabled = true;
+  loader.style.display = 'block';
+  writeLog("Menghubungi server Groq AI...", "");
 
-            writeLog("Menghubungi server Groq AI...", "");
+  try {
+    const responseGroq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKeyInput}`
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages: [
+          {
+            role: "system",
+            content: `Ubah teks laporan menjadi JSON murni tanpa markdown. Harus berupa satu objek dengan key teks persis ini: "Tanggal", "Shift", "Nama Teknisi", "Ruangan yang Diservice", "Jenis Pekerjaan", "Detail Pekerjaan", "Material Digunakan", "Status", "Foto/Dokumentasi", "Keterangan". Jika data kosong isi dengan "-".`
+          },
+          { role: "user", content: chatWA }
+        ],
+        temperature: 0.1
+      })
+    });
 
-            try {
-                const responseGroq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKeyInput}`
-                    },
-                    body: JSON.stringify({
-                        model: "llama3-8b-8192",
-                        messages: [
-                            { 
-                                role: "system", 
-                                content: `Ubah teks laporan menjadi JSON murni tanpa markdown. Harus berupa satu objek dengan key teks persis ini: "Tanggal", "Shift", "Nama Teknisi", "Ruangan yang Diservice", "Jenis Pekerjaan", "Detail Pekerjaan", "Material Digunakan", "Status", "Foto/Dokumentasi", "Keterangan". Jika data kosong isi dengan "-".` 
-                            },
-                            { role: "user", content: chatWA }
-                        ],
-                        temperature: 0.1
-                    })
-                });
+    if (!responseGroq.ok) {
+      const errData = await responseGroq.json();
+      throw new Error(`Groq menolak akses. Detail: ${errData.error?.message || responseGroq.statusText}`);
+    }
 
-                if (!responseGroq.ok) {
-                    const errData = await responseGroq.json();
-                    throw new Error(`Groq menolak akses. Detail: ${errData.error?.message || responseGroq.statusText}`);
-                }
+    const resData = await responseGroq.json();
+    let rawJsonText = resData.choices[0].message.content.trim();
+    if (rawJsonText.includes("```")) {
+      rawJsonText = rawJsonText.replace(/```json|```/g, "").trim();
+    }
 
-                const resData = await responseGroq.json();
-                let rawJsonText = resData.choices[0].message.content.trim();
-                
-                if(rawJsonText.includes("```")) {
-                    rawJsonText = rawJsonText.replace(/```json|```/g, "").trim();
-                }
+    writeLog("AI berhasil menyusun struktur data laporan.", "success");
 
-                writeLog("AI berhasil menyusun struktur data laporan.", "success");
-                const parsedData = JSON.parse(rawJsonText);
-                
-                const waktuSkg = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-                parsedData["Sumber Input"] = "WhatsApp via Groq AI";
-                parsedData["Waktu Input pada laporan harian"] = waktuSkg;
+    const parsedData = JSON.parse(rawJsonText);
+    const waktuSkg = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    parsedData["Sumber Input"] = "WhatsApp via Groq AI";
+    parsedData["Waktu Input pada laporan harian"] = waktuSkg;
 
-                writeLog("Mengirim data hasil AI ke Google Sheet...", "");
+    writeLog("Mengirim data hasil AI ke Google Sheet...", "");
 
-                const responseSheet = await fetch(SHEET_BEST_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(parsedData)
-                });
+    const responseSheet = await fetch(SHEET_BEST_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parsedData)
+    });
 
-                if(responseSheet.ok) {
-                    writeLog("SUKSES: Laporan berhasil disimpan ke Google Sheet!", "success");
-                    document.getElementById('wa-input').value = "";
-                    muatDashboardData();
-                } else {
-                    throw new Error(`Gagal kirim ke Google Sheet. Status: ${responseSheet.status}`);
-                }
+    if (responseSheet.ok) {
+      writeLog("SUKSES: Laporan berhasil disimpan ke Google Sheet!", "success");
+      document.getElementById('wa-input').value = "";
+      muatDashboardData();
+    } else {
+      throw new Error(`Gagal kirim ke Google Sheet. Status: ${responseSheet.status}`);
+    }
 
-            } catch (error) {
-                console.error(error);
-                writeLog("ERROR: " + error.message, "error");
-                alert("Gagal memproses data. Cek kotak monitor log hitam.");
-            } finally {
-                btn.disabled = false;
-                loader.style.display = 'none';
-            }
-        }
+  } catch (error) {
+    console.error(error);
+    writeLog("ERROR: " + error.message, "error");
+    alert("Gagal memproses data. Cek kotak monitor log hitam.");
+  } finally {
+    btn.disabled = false;
+    loader.style.display = 'none';
+  }
+}
 
-        function muatDashboardData() {
-            const tbody = document.getElementById('dashboard-rows');
-            if(!tbody) return;
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Menyinkronkan data...</td></tr>`;
+// ✅ FIX: Assign ke window.muatDashboardData
+window.muatDashboardData = function() {
+  const tbody = document.getElementById('dashboard-rows');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Menyinkronkan data...</td></tr>`;
 
-            fetch(SHEET_BEST_URL)
-            .then(res => res.json())
-            .then(data => {
-                tbody.innerHTML = "";
-                if(!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">Belum ada data di Google Sheet.</td></tr>`;
-                    return;
-                }
-                data.forEach((item, index) => {
-                    const tr = document.createElement('tr');
-                    const txtStatus = item["Status"] ? item["Status"].toLowerCase() : '';
-                    const badgeStatus = txtStatus.includes('selesai') || txtStatus.includes('oke') || txtStatus.includes('done') ? 'status-done' : 'status-pending';
-                    
-                    tr.innerHTML = `
-                        <td>${index + 1}</td>
-                        <td><strong>${item["Tanggal"] || '-'}</strong><br><small style="color:#64748b">${item["Shift"] || '-'}</small></td>
-                        <td>${item["Nama Teknisi"] || '-'}</td>
-                        <td>${item["Ruangan yang Diservice"] || '-'}</td>
-                        <td><strong>${item["Jenis Pekerjaan"] || '-'}</strong><br><small style="color:#64748b">${item["Detail Pekerjaan"] || '-'}</small></td>
-                        <td>${item["Material Digunakan"] || '-'}</td>
-                        <td class="${badgeStatus}">${item["Status"] || '-'}</td>
-                        <td>${item["Foto/Dokumentasi"] && item["Foto/Dokumentasi"].startsWith('http') ? `<a href="${item["Foto/Dokumentasi"]}" target="_blank">Lihat Foto</a>` : (item["Foto/Dokumentasi"] || '-')}</td>
-                        <td><span class="badge badge-wa">${item["Sumber Input"] || 'Manual'}</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            })
-            .catch(err => {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Gagal memuat dashboard. Hubungkan internet.</td></tr>`;
-            });
-        }
+  fetch(SHEET_BEST_URL)
+    .then(res => res.json())
+    .then(data => {
+      tbody.innerHTML = "";
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center;">Belum ada data di Google Sheet.</td></tr>`;
+        return;
+      }
+      data.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        const txtStatus = item["Status"] ? item["Status"].toLowerCase() : '';
+        const badgeStatus = txtStatus.includes('selesai') || txtStatus.includes('oke') || txtStatus.includes('done') ? 'status-done' : 'status-pending';
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td><strong>${item["Tanggal"] || '-'}</strong><br><small style="color:#64748b">${item["Shift"] || '-'}</small></td>
+          <td>${item["Nama Teknisi"] || '-'}</td>
+          <td>${item["Ruangan yang Diservice"] || '-'}</td>
+          <td><strong>${item["Jenis Pekerjaan"] || '-'}</strong><br><small style="color:#64748b">${item["Detail Pekerjaan"] || '-'}</small></td>
+          <td>${item["Material Digunakan"] || '-'}</td>
+          <td class="${badgeStatus}">${item["Status"] || '-'}</td>
+          <td>${item["Foto/Dokumentasi"] && item["Foto/Dokumentasi"].startsWith('http') ? `<a href="${item["Foto/Dokumentasi"]}" target="_blank">Lihat Foto</a>` : (item["Foto/Dokumentasi"] || '-')}</td>
+          <td><span class="badge badge-wa">${item["Sumber Input"] || 'Manual'}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: red;">Gagal memuat dashboard. Hubungkan internet.</td></tr>`;
+    });
+}
 
-        window.addEventListener('DOMContentLoaded', muatDashboardData);
-    </script>
+window.addEventListener('DOMContentLoaded', muatDashboardData);
+</script>
 </head>
 <body>
 
 <div class="navbar">⚡ AC Maintenance - Groq AI Lightning Engine v2.1</div>
 
 <div class="container">
-    <div style="display: flex; flex-direction: column; gap: 20px;">
-        <!-- INPUT API KEY -->
-        <div class="card" style="border: 2px solid #10b981;">
-            <h3 style="color: #15803d;">🔑 Kunci Akses Groq AI</h3>
-            <label>Masukkan API Key Groq Kamu:</label>
-            <input type="password" id="groq-key" placeholder="Tempel gsk_... milikmu di sini">
-        </div>
+  <div style="display: flex; flex-direction: column; gap: 20px;">
 
-        <!-- INPUT CHAT WA -->
-        <div class="card">
-            <h3>📥 Paste Chat WhatsApp</h3>
-            <textarea id="wa-input" placeholder="Tempel laporan mentah dari grup WA di sini..."></textarea>
-            <button id="btn-proses" class="btn" onclick="prosesLaporanOtomatis()">Proses & Inject ke Sheet 🚀</button>
-            <div id="loading-status" class="loader">⚡ Sedang memproses data...</div>
-        </div>
-
-        <!-- LIVE LOG SYSTEM -->
-        <div class="card">
-            <h3>🖥️ Live Process Log Chat</h3>
-            <div class="log-box" id="system-log">
-                <div class="log-entry">[SYSTEM] Engine v2.1 siap digunakan.</div>
-            </div>
-        </div>
+    <!-- INPUT API KEY -->
+    <div class="card" style="border: 2px solid #10b981;">
+      <h3 style="color: #15803d;">🔑 Kunci Akses Groq AI</h3>
+      <label>Masukkan API Key Groq Kamu:</label>
+      <input type="password" id="groq-key" placeholder="Tempel gsk_... milikmu di sini">
     </div>
 
-    <!-- DASHBOARD -->
+    <!-- INPUT CHAT WA -->
     <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
-            <h3 style="margin: 0; border: none; padding: 0;">📊 Dashboard Laporan Harian Utama</h3>
-            <button class="btn" onclick="muatDashboardData()" style="width: auto; margin: 0; padding: 6px 12px; background-color: #64748b;">Segarkan Data 🔄</button>
-        </div>
-        
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Tanggal/Shift</th>
-                        <th>Teknisi</th>
-                        <th>Ruangan</th>
-                        <th>Pekerjaan (Detail)</th>
-                        <th>Material</th>
-                        <th>Status</th>
-                        <th>Dokumentasi</th>
-                        <th>Input Via</th>
-                    </tr>
-                </thead>
-                <tbody id="dashboard-rows">
-                    <tr>
-                        <td colspan="9" style="text-align: center; color: #94a3b8;">Memuat data dashboard...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+      <h3>📥 Paste Chat WhatsApp</h3>
+      <textarea id="wa-input" placeholder="Tempel laporan mentah dari grup WA di sini..."></textarea>
+      <button id="btn-proses" class="btn" onclick="prosesLaporanOtomatis()">Proses & Inject ke Sheet 🚀</button>
+      <div id="loading-status" class="loader">⚡ Sedang memproses data...</div>
     </div>
-</div>
 
+    <!-- LIVE LOG SYSTEM -->
+    <div class="card">
+      <h3>🖥️ Live Process Log Chat</h3>
+      <div class="log-box" id="system-log">
+        <div class="log-entry">[SYSTEM] Engine v2.1 siap digunakan.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
+      <h3 style="margin: 0; border: none; padding: 0;">📊 Dashboard Laporan Harian Utama</h3>
+      <button class="btn" onclick="muatDashboardData()" style="width: auto; margin: 0; padding: 6px 12px; background-color: #64748b;">Segarkan Data 🔄</button>
+    </div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Tanggal/Shift</th>
+            <th>Teknisi</th>
+            <th>Ruangan</th>
+            <th>Pekerjaan (Detail)</th>
+            <th>Material</th>
+            <th>Status</th>
+            <th>Dokumentasi</th>
+            <th>Input Via</th>
+          </tr>
+        </thead>
+        <tbody id="dashboard-rows">
+          <tr>
+            <td colspan="9" style="text-align: center; color: #94a3b8;">Memuat data dashboard...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
 </body>
 </html>
