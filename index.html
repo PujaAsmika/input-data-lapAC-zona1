@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Otomatis Laporan AC - Secure AI Injection</title>
+    <title>Sistem Otomatis Laporan AC - Groq AI Engine</title>
     <style>
         :root {
             --primary: #1e3a8a;
@@ -20,7 +20,7 @@
         h3 { margin-top: 0; color: var(--primary); border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
         label { font-weight: 600; display: block; margin: 12px 0 6px; font-size: 14px; }
         textarea { width: 100%; height: 140px; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; resize: none; }
-        input[type="password"] { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: #fffbeb; }
+        input[type="password"] { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: #f0fdf4; }
         .btn { display: inline-block; width: 100%; padding: 14px; background-color: var(--success); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 15px; font-size: 15px; transition: background 0.2s; }
         .btn:hover { background-color: #059669; }
         .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
@@ -45,31 +45,31 @@
 </head>
 <body>
 
-<div class="navbar">🛡️ AC Maintenance - Secure AI Injection System</div>
+<div class="navbar">⚡ AC Maintenance - Groq AI Lightning System</div>
 
 <div class="container">
     <!-- SEBELAH KIRI: PANEL INPUT -->
     <div style="display: flex; flex-direction: column; gap: 20px;">
-        <!-- KOTAK PENGAMAN API KEY -->
-        <div class="card" style="border: 2px solid #f59e0b;">
-            <h3 style="color: #b45309;">🔑 Kunci Akses Sistem AI</h3>
-            <label>Masukkan API Key Gemini Baru Kamu:</label>
-            <input type="password" id="gemini-key" placeholder="Tempel AIzaSy... milikmu di sini">
-            <p style="font-size: 11px; color: #b45309; margin: 5px 0 0 0;">*Kunci ini aman, hanya disimpan sementara di browsermu dan tidak akan ter-upload ke GitHub.</p>
+        <!-- KOTAK PENGAMAN API KEY GROQ -->
+        <div class="card" style="border: 2px solid #10b981;">
+            <h3 style="color: #15803d;">🔑 Kunci Akses Groq AI</h3>
+            <label>Masukkan API Key Groq Kamu:</label>
+            <input type="password" id="groq-key" placeholder="Tempel gsk_... milikmu di sini">
+            <p style="font-size: 11px; color: #16a34a; margin: 5px 0 0 0;">*Kunci ini aman, hanya berjalan di browsermu dan tidak akan bocor ke GitHub.</p>
         </div>
 
         <div class="card">
             <h3>📥 Paste Chat WhatsApp</h3>
             <textarea id="wa-input" placeholder="Tempel laporan mentah dari grup WA di sini..."></textarea>
             <button id="btn-proses" class="btn" onclick="prosesLaporanOtomatis()">Proses & Inject ke Sheet 🚀</button>
-            <div id="loading-status" class="loader">🤖 AI sedang membaca & mengirim data...</div>
+            <div id="loading-status" class="loader">⚡ Groq LPU sedang memproses data kilat...</div>
         </div>
 
         <!-- LOG MONITOR -->
         <div class="card">
             <h3>🖥️ Live Process Log Chat</h3>
             <div class="log-box" id="system-log">
-                <div class="log-entry">[SYSTEM] Engine siap. Masukkan API Key untuk memulai...</div>
+                <div class="log-entry">[SYSTEM] Engine siap. Masukkan Groq API Key untuk memulai...</div>
             </div>
         </div>
     </div>
@@ -107,7 +107,7 @@
 </div>
 
 <script>
-    // URL API Sheet Best tetap aman ditaruh di sini
+    // URL API Sheet Best milikmu tetap aman di sini
     const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/f42405fc-0639-47b1-bef3-817aed0e6e45";
 
     function writeLog(text, type = '') {
@@ -121,12 +121,12 @@
         logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // MAIN ENGINE
+    // MAIN ENGINE MENGGUNAKAN GROQ CLOUD API
     async function prosesLaporanOtomatis() {
-        const apiKeyInput = document.getElementById('gemini-key').value.trim();
+        const apiKeyInput = document.getElementById('groq-key').value.trim();
         const chatWA = document.getElementById('wa-input').value.trim();
         
-        if(!apiKeyInput) return alert("Wajib memasukkan API Key Gemini baru di kotak kuning atas!");
+        if(!apiKeyInput) return alert("Wajib memasukkan API Key Groq di kotak hijau atas!");
         if(!chatWA) return alert("Silakan tempel teks chat WA terlebih dahulu!");
 
         const btn = document.getElementById('btn-proses');
@@ -134,11 +134,12 @@
         btn.disabled = true;
         loader.style.display = 'block';
 
-        writeLog("Menghubungi AI menggunakan API Key yang kamu input...", "");
+        writeLog("Menghubungi Groq LPU Engine...", "");
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKeyInput}`;
+        // Menggunakan model llama3-8b-8192 yang gratis, super cepat, dan andal
+        const groqUrl = "https://api.groq.com/openai/v1/chat/completions";
         
-        const promptSystem = `Ubah teks laporan teknik AC berikut menjadi objek JSON murni tanpa pembungkus markdown seperti \`\`\`json. Kamu HARUS mengeluarkan data dengan key bertipe teks persis seperti ini:
+        const instruksiSystem = `Ubah teks laporan teknik AC menjadi objek JSON murni tanpa pembungkus markdown seperti \`\`\`json. Kamu HARUS mengeluarkan data dengan key bertipe teks persis seperti ini:
         {
           "Tanggal": "isi tanggal",
           "Shift": "isi shift",
@@ -151,29 +152,43 @@
           "Foto/Dokumentasi": "isi url foto atau deskripsi foto",
           "Keterangan": "isi keterangan tambahan"
         }
-        Peraturan: Jika informasi di teks tidak tertera, isi valuenya dengan "-". Jangan ubah struktur key di atas. Ini teks laporannya: ${chatWA}`;
+        Peraturan: Jika informasi di teks tidak tertera, isi valuenya dengan "-". Jangan ubah atau kurangi struktur key di atas.`;
 
         try {
-            const responseGemini = await fetch(geminiUrl, {
+            const responseGroq = await fetch(groqUrl, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: promptSystem }] }] })
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKeyInput}`
+                },
+                body: JSON.stringify({
+                    model: "llama3-8b-8192",
+                    messages: [
+                        { role: "system", content: instruksiSystem },
+                        { role: "user", content: chatWA }
+                    ],
+                    temperature: 0.1,
+                    response_format: { type: "json_object" } // Memaksa Groq mengeluarkan JSON bersih
+                })
             });
 
-            if(!responseGemini.ok) throw new Error("API Key salah atau sudah diblokir/expired.");
+            if(!responseGroq.ok) throw new Error("API Key Groq salah, tidak valid, atau limit habis.");
 
-            const dataGemini = await responseGemini.json();
-            let rawJsonText = dataGemini.candidates[0].content.parts[0].text.trim();
+            const resData = await responseGroq.json();
+            let rawJsonText = resData.choices[0].message.content.trim();
             
+            // Pengaman tambahan jika tanda markdown tetap lolos
             if(rawJsonText.includes("```")) {
-                rawJsonText = rawJsonText.replace(/```json|```/g, "").trim();
+                rawJsonText = rawJsonText.replace(/
+```json|```/g, "").trim();
             }
 
-            writeLog("AI Sukses menerjemahkan data ke format JSON.", "success");
+            writeLog("Groq Sukses mengekstrak data ke format JSON.", "success");
             const parsedData = JSON.parse(rawJsonText);
             
+            // Tambah metadata waktu real-time
             const waktuSkg = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-            parsedData["Sumber Input"] = "WhatsApp via Auto-AI";
+            parsedData["Sumber Input"] = "WhatsApp via Groq AI";
             parsedData["Waktu Input pada laporan harian"] = waktuSkg;
 
             writeLog("Mengirim data langsung ke Google Sheet...", "");
@@ -186,9 +201,9 @@
 
             if(responseSheet.ok) {
                 writeLog("DATA BERHASIL DI-INJECT KE GOOGLE SHEET!", "success");
-                alert("Sukses! Chat WA diproses AI & langsung masuk ke Google Sheet.");
+                alert("Sukses! Chat WA diproses Groq AI & langsung masuk ke Google Sheet.");
                 document.getElementById('wa-input').value = "";
-                muatDashboardData();
+                muatDashboardData(); // Refresh dashboard otomatis
             } else {
                 throw new Error("Gagal terhubung dengan Sheet Best.");
             }
@@ -196,7 +211,7 @@
         } catch (error) {
             console.error(error);
             writeLog("PROSES GAGAL: " + error.message, "error");
-            alert("Terjadi kesalahan sistem. Periksa kembali API Key kamu.");
+            alert("Terjadi kesalahan sistem. Periksa kembali API Key Groq kamu.");
         } finally {
             btn.disabled = false;
             loader.style.display = 'none';
